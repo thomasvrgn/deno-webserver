@@ -11,6 +11,9 @@ export class HTTPServer extends Listener implements RequestMethods {
   };
   public readonly events: MethodEvent[] = [];
   private readonly server: Server = serve(this.configuration);
+  public get port(): number { return this.configuration.port };
+  public get hostname(): string { return this.configuration.hostname };
+
   // Defining configuration and extending Listener
   constructor(configuration: ServerConfiguration) {
     super();
@@ -46,7 +49,8 @@ export class HTTPServer extends Listener implements RequestMethods {
     return selectedEvent.callback(...data);
   }
   // Server listening starting
-  public async start(): Promise<void> {
+  public async listen(callback: Function): Promise<void> {
+    await callback();
     for await (const request of this.server) {
       this.emit(`${request.url}||${request.method.toLowerCase()}`, request);
     }
@@ -58,10 +62,12 @@ const server: HTTPServer = new HTTPServer({
   hostname: 'localhost',
 });
 
-server.get('/', function(request: ServerRequest) {
-  request.respond({
-    body: `URL demandée : ${request.url}`
+server.get('/', async function(request: ServerRequest) {
+  await request.respond({
+    body: `Requested URL: ${request.url}`
   });
 });
 
-await server.start();
+await server.listen(function() {
+  console.log('Server listening on', server.port);
+});
